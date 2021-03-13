@@ -16,6 +16,7 @@ export class AppComponent {
   // tslint:disable-next-line:typedef
   onFileSelected(event) {
     if (event.target.files){
+      console.log(event.target.files[0].size);
       const reader = new FileReader();
       reader.readAsDataURL(event.target.files[0]);
       reader.onload = (event: any) => {
@@ -33,7 +34,7 @@ export class AppComponent {
     }
     const fd = new FormData();
     fd.append('image', this.selectedFile, this.selectedFile.name);
-    this.http.post('http://localhost:3000/upload', fd, {
+    this.http.post('http://localhost:3033/upload', fd, {
       reportProgress: true,
       observe: 'events'
     })
@@ -45,5 +46,6 @@ export class AppComponent {
         }
         console.log(event);
       });
+    this.url = '../assets/resize.png';
   }
 }
