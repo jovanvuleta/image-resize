@@ -40,60 +40,38 @@ app.listen(port, () => {
     console.log(`Server is up at ${port}`)
 })
 
-const { Worker } =  require("worker_threads");
+// const { Worker } =  require("worker_threads");
 
-module.exports = function imageResizer(image, size, extension) {
-    return new Promise((resolve, reject) => {
-    const worker = new  Worker(__dirname + "/workerThread.js", {
-        workerData: { image, size, extension }
-    });
-    worker.on("message", resolve);
-    worker.on("error", reject);
-    worker.on("exit", code  => {
-        if (code  !==  0)
-            reject(new  Error(`Worker stopped with exit code ${code}`));
-        });
-    });
-};
+// module.exports = function imageResizer(image, size, extension) {
+//     return new Promise((resolve, reject) => {
+//     const worker = new  Worker(__dirname + "/workerThread.js", {
+//         workerData: { image, size, extension }
+//     });
+//     worker.on("message", resolve);
+//     worker.on("error", reject);
+//     worker.on("exit", code  => {
+//         if (code  !==  0)
+//             reject(new  Error(`Worker stopped with exit code ${code}`));
+//         });
+//     });
+// };
 
 app.post('/upload', upload, (req, res) => {
     let myFile = req.file.originalname.split(".")
     const fileType = myFile[myFile.length - 1]
     const size = req.file.size;
     const image = req.file.buffer;
+    const width = req.body.width;
+    const height = req.body.height;
     console.log("Size: " + size)
+    console.log("Width: " + width)
+    console.log("Height: " + height)
 
     if(!fileType.toString().toLowerCase() === 'jpg' || !fileType.toString().toLowerCase() === 'png'){
         console.log('File format exception triggered!')
         res.status(500).send("Unsupported image extensions, try again.")
         return;
     }
-
-    var sqsSendParams = {
-        DelaySeconds: 1,
-        MessageAttributes: {
-            "Image": {
-                DataType: "Binary", 
-                BinaryValue: image
-            },
-            "Size": {
-                DataType: "Number",
-                StringValue: size.toString()
-            }
-        },
-        MessageBody: "John Doe sending!",
-        QueueUrl: queueURL
-    }
-
-    sqs.sendMessage(sqsSendParams, (err, data) => {
-        if(err) {
-            console.log("Error", err);
-        } else {
-            console.log("Message sent to SQS: ", data.MessageId)
-        }
-    })
-    console.log(req.file)
-    
     const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${uuidv4()}.${fileType}`,
@@ -105,8 +83,54 @@ app.post('/upload', upload, (req, res) => {
             res.status(500).send(err)
         }
         console.log("Image saved to S3 bucket")
-        res.status(200).send(data)
+        console.log("Key: " + params.Key)
     })
+
+    var sqsSendParams = {
+        DelaySeconds: 1,
+        MessageAttributes: {
+            "Image": {
+                DataType: "Binary", 
+                BinaryValue: image
+            },
+            "Extension": {
+                DataType: "String", 
+                StringValue: fileType.toString()
+            },
+            "BucketKey": {
+                DataType: "String",
+                StringValue: params.Key.toString()
+            },
+            "Width": {
+                DataType: "Number",
+                StringValue: width.toString()
+            },
+            "Height": {
+                DataType: "Number",
+                StringValue: height.toString()
+            }
+        },
+        MessageBody: "Hiii, John Doe sending!",
+        QueueUrl: queueURL
+    }
+
+    sqs.sendMessage(sqsSendParams, (err, data) => {
+        if(err) {
+            console.log("Error", err);
+        } else {
+            console.log("Message sent to SQS: ", data.MessageId)
+        }
+    })
+    console.log(req.file)
+    res.status(200)
     // imageResizer(image, size, fileType)
 })
+
+app.get('/download', (req, res) => {
+    const file = 'client/src/assets/img/' + req.query.filename;
+    console.log(req.query.filename);
+    res.download(file)
+})
+
+
 
