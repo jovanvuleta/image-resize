@@ -1,5 +1,4 @@
 require('dotenv/config')
-const fs = require('fs');
 const express = require('express')
 const multer = require('multer')
 const cors = require('cors')
@@ -119,19 +118,22 @@ app.post('/download', function(req,res){
             Bucket: process.env.AWS_BUCKET_NAME
         }).promise()
         .then(data => {
+            console.log("Contents:")
             console.log(data.Contents[0])
-            fetchedData = data.Contents[0].Key
+            splittedStr = data.Contents[0].Key.split('.')
             file = download(process.env.AWS_ID, process.env.AWS_SECRET, process.env.REGION,
                      process.env.AWS_BUCKET_NAME, data.Contents[0].Key)
-            res.sendFile(__dirname + '\\image.png', file)
         })
         .catch(err => {
             console.log("Error present: " + err)
         });
+
+    res.sendFile(__dirname + '\\AWS_resources\\image.' + extension, file)
+
 });
 
 
-async function download(accessKeyId, secretAccessKey, region, bucketName, baseImage) {
+function download(accessKeyId, secretAccessKey, region, bucketName, baseImage) {
         console.log("Starting Download... ")
         const s3 = new AWS.S3({
             accessKeyId: accessKeyId,
@@ -143,10 +145,9 @@ async function download(accessKeyId, secretAccessKey, region, bucketName, baseIm
             Key: baseImage
          };
 
-        await s3.getObject(params, (err, data) => {
+        s3.getObject(params, (err, data) => {
             if(err) console.error(err);
             if(data.Body){
-                fs.writeFileSync('./image.png', data.Body)
                 console.log("Image Downloaded.");
                 return(data.Body)
             }

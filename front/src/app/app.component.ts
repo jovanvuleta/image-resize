@@ -13,7 +13,6 @@ export class AppComponent {
   url = '../assets/resize.png';
   fileSelectedFlag = false;
   fileUploadedFlag = false;
-  fileDownloadedFlag = false;
 
   constructor(private http: HttpClient) {}
 

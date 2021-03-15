@@ -1,6 +1,7 @@
 require('dotenv/config')
 const sharp = require("sharp");
 const AWS = require('aws-sdk')
+const fs = require('fs');
 const AWSConfig = {
     apiVersion: "2012-11-05",
     accessKeyId: process.env.AWS_ID,
@@ -95,10 +96,11 @@ let resizeImage = (image, width, height, extension, bucketKey) => {
                 }
                 console.log("S3 resized response: ")
                 console.log(data)
+                fs.writeFileSync('./AWS_resources/image.' + extension, params.Body)
                 return data.Key;
             })
         })
-        .catch( err => { 'Error in sharp' });
+        .catch( err => { 'Error in sharp' + err });
 }
 
 readUserDetails()
