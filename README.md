@@ -3,11 +3,11 @@ Project steps: # image-resize
 - npm install (install required dependecies)
 - Configure the .env file with the appropriate AWS key information, Bucket and SQS information
 - Fields for .env file that need to be added in the project:
-    AWS_ID="your ID key"
-    AWS_SECRET="your secret key"
-    AWS_BUCKET_NAME="your bucket name"
-    SQS_URL = "your sqs url"
-    REGION = "your region"
+   - AWS_ID="your ID key"
+   - AWS_SECRET="your secret key"
+   - AWS_BUCKET_NAME="your bucket name"
+   - SQS_URL = "your sqs url"
+   - REGION = "your region"
 - Spin up the server with command "npm run server"
 - Front End part of the application is located on the port 4200 (http://localhost:4200/)
 - Navigate to the front folder with the command "cd ./front/" and run command "npm install"
