@@ -2,7 +2,7 @@ Project steps: # image-resize
 - Navigate to the server folder with the command "cd ./server/" and run command "npm install"
 - npm install (install required dependecies)
 - Configure the .env file with the appropriate AWS key information, Bucket and SQS information
-- Fields for .env file that need to be added in the project:
+- Fields for .env file that need to be added in the project, in the server folder:
    - AWS_ID="your ID key"
    - AWS_SECRET="your secret key"
    - AWS_BUCKET_NAME="your bucket name"
