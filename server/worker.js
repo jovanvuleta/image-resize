@@ -1,16 +1,13 @@
 require('dotenv/config')
-const { v4: uuidv4 } = require('uuid')
 const sharp = require("sharp");
 const AWS = require('aws-sdk')
-const SESConfig = {
+const AWSConfig = {
     apiVersion: "2012-11-05",
     accessKeyId: process.env.AWS_ID,
     accessSecretKey: process.env.AWS_SECRET,
-    region: "eu-central-1"
+    region: process.env.REGION
 }
-AWS.config.update(SESConfig);
-
-var queueURL = 'https://sqs.eu-central-1.amazonaws.com/901871468409/my-queue'
+AWS.config.update(AWSConfig);
 
 var sqs = new AWS.SQS({
     accessKeyId: process.env.AWS_ID,
@@ -29,7 +26,7 @@ var params = {
     ],
     // VisibilityTimeout: 0,
     // WaitTimeSeconds: 0,
-    QueueUrl: queueURL
+    QueueUrl: process.env.SQS_URL
 }
 
 let readUserDetails = () => {
@@ -37,13 +34,12 @@ let readUserDetails = () => {
         console.log("SQS Polled Data: " + data.Messages)
         if(err) {
             console.log("Received error", err);
-            // callback(err, 'Error fetching messages from SQS');
             return;
         } else if(data.Messages) {
-            // console.log("Number of messages received: " + data.Messages.length);
+            console.log("Number of messages received: " + data.Messages.length);
             console.log("Received message: " + JSON.stringify(data.Messages[0]));
-            // console.log("Message body: " + data.Messages[0].Body);
-            
+            console.log("Message body: " + data.Messages[0].Body);
+            // Fetching all the SQS messages and preforming resizing and deletion
             for(let i = 0; i < data.Messages.length; i++) {
                 image = data.Messages[i].MessageAttributes.Image.BinaryValue;
                 width = data.Messages[i].MessageAttributes.Width.StringValue;
@@ -55,7 +51,6 @@ let readUserDetails = () => {
                 resizeImage(image, parseInt(width), parseInt(height), extension, bucketKey)
                 deleteMessages(data.Messages[i])
             }
-            console.log("Lenght: " + data.Messages.length)
         } else {
             console.log('No messages received');
         }
@@ -64,7 +59,7 @@ let readUserDetails = () => {
 
 let deleteMessages = (data) => {
     let deleteParams = {
-        QueueUrl: queueURL,
+        QueueUrl: process.env.SQS_URL,
         ReceiptHandle: data.ReceiptHandle
     };
     console.log("ReceiptHandle: " + data.ReceiptHandle);
@@ -78,24 +73,13 @@ let deleteMessages = (data) => {
 }
 
 let resizeImage = (image, width, height, extension, bucketKey) => {
-    console.log('Usao u sharp')
-    // await sharp(image)
-    //     .resize(size, size, { fit:  "cover" })
-    //     .toFile(outputPath);   
-    secondImageReference = image
-    sharp(secondImageReference)
-        .resize(width, height, {
-            fit: 'contain'
-        })
-        .toFile('output.png', (err, info) => {
-            console.log("Info: ") 
-            console.log(info)
-        });
-    
+    console.log("Extension")
+    console.log(extension)
     sharp(image)
         .resize(width, height, {
             fit: "contain"
         })
+        .toFormat(extension)
         .toBuffer()
         .then(data => {
             console.log("sharp data: ")
@@ -111,6 +95,7 @@ let resizeImage = (image, width, height, extension, bucketKey) => {
                 }
                 console.log("S3 resized response: ")
                 console.log(data)
+                return data.Key;
             })
         })
         .catch( err => { 'Error in sharp' });

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import {HttpClient, HttpEventType, HttpParams} from '@angular/common/http';
-import * as fileSaver from 'file-saver';
+import {HttpClient, HttpEventType, HttpHeaders} from '@angular/common/http';
+import { saveAs } from 'file-saver';
+import {Observable} from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -12,6 +13,7 @@ export class AppComponent {
   url = '../assets/resize.png';
   fileSelectedFlag = false;
   fileUploadedFlag = false;
+  fileDownloadedFlag = false;
 
   constructor(private http: HttpClient) {}
 
@@ -58,31 +60,40 @@ export class AppComponent {
         } else if (event.type === HttpEventType.Response) {
           console.log(event);
         }
-        console.log(event);
       });
     this.url = '../assets/resize.png';
     this.fileUploadedFlag = true;
   }
 
-  // tslint:disable-next-line:ban-types typedef
-  downloadFile(x: String) {
-    // @ts-ignore
-    const param = new HttpParams().set('filename', x);
-    const options = {
-      params: param
-    };
-    return this.http.get('http://localhost:3033/download', {...options, responseType: 'blob'})
-      .subscribe(res => {
-        if (res) {
-          // const url = window.URL.createObjectURL(this.returnBlob(res));
-          // window.open(url);
-          fileSaver.saveAs(this.returnBlob(res), this.selectedFile);
-        }
-      });
+  // tslint:disable-next-line:typedef
+  download() {
+    let filename = 'ResizedImage';
+    this.downloadImage(filename).subscribe(
+      data => {
+        console.log(data);
+        console.log(data.type);
+        // this.fileDownloadedFlag = true;
+        const type = data.type.substring(6);
+        filename = filename + '.' + type;
+        console.log(filename);
+        saveAs(data, filename);
+      },
+      err => {
+        alert('Problem while downloading the file.');
+        console.error(err);
+      }
+    );
   }
 
-  returnBlob(res): Blob {
-    console.log('File Downloaded!');
-    return new Blob([res], {type: 'image/jpeg'});
+  public downloadImage(file): Observable<any> {
+    // Create url
+    const url = 'http://localhost:3033/download';
+    const body = { filename: file };
+    console.log('File: ' + file);
+
+    return this.http.post(url, body, {
+      responseType: 'blob',
+      headers: new HttpHeaders().append('Content-Type', 'application/json')
+    });
   }
 }
